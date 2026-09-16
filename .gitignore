@@ -1,0 +1,52 @@
+# See dev-standards/DEVELOPMENT_ENVIRONMENT_STANDARDS.md §10 Phase 0
+# (copied from dev-standards/templates/gitignore.flutter)
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.g.dart.bak
+
+# Coverage
+coverage/
+
+# Android
+android/.gradle/
+android/local.properties
+android/key.properties
+android/**/*.keystore
+android/**/*.jks
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Runner.xcworkspace/xcshareddata/
+
+# IDE / editor
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.iml
+
+# OS cruft
+.DS_Store
+
+# Secrets — never commit real values
+.env
+.env.local
+!.env.example
+
+# Worktrees (see dev-standards §3)
+.worktrees/
+
+# Claude Code: machine-local permission settings, not shared
+.claude/settings.local.json
+
+# Keep
+!pubspec.lock
