@@ -1,0 +1,50 @@
+# Copy to <repo>/.github/workflows/ci.yml once a GitHub remote exists.
+# Inactive until then — this file only takes effect inside an actual
+# .github/workflows/ directory on a pushed repo.
+# See dev-standards/DEVELOPMENT_ENVIRONMENT_STANDARDS.md §4, §10 Phase 2
+#
+# Intentionally thin: every step just calls the same Makefile targets
+# used locally (see §4), so CI can never drift from what was run by hand.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The runner has nothing at ~/.venvs/dev-tools (that's this VM's
+      # local install path, not portable) and no gitleaks on PATH at
+      # all, so `make check` needs it installed here first — same
+      # binary/version as the local install (§9), just placed via
+      # $GITHUB_PATH instead of a hardcoded path.
+      - name: Install gitleaks
+        run: |
+          curl -sL -o /tmp/gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          mkdir -p "$RUNNER_TEMP/bin"
+          tar -xzf /tmp/gitleaks.tar.gz -C "$RUNNER_TEMP/bin" gitleaks
+          chmod +x "$RUNNER_TEMP/bin/gitleaks"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+      # Adjust setup step per component language (Flutter action,
+      # setup-node, setup-python, etc.) — left generic here since the
+      # backend language isn't decided yet (§12).
+      # - uses: subosito/flutter-action@v2
+      # - uses: actions/setup-node@v4
+      # - uses: actions/setup-python@v5
+
+      - name: Static checks (format, lint, secret scan)
+        run: make check
+
+      - name: Tests
+        run: make test
+
+      - name: Build
+        run: make build
