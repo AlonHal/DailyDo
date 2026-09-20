@@ -87,7 +87,7 @@ Build (2) as a generic module in `core/import_export/` from the start — it's a
 **Phase 0 — Environment ready** *(from the earlier setup summary)*
 - [ ] Flutter SDK, Android Studio/SDK, VS Code extensions installed; `flutter doctor -v` clean
 - [ ] KVM vs. physical-device testing path decided
-- [ ] `git init` in this folder, Flutter `.gitignore`, first commit
+- [x] `git init` in this folder, Flutter `.gitignore`, first commit
 
 **Phase 1 — Scaffold**
 - [ ] `flutter create`, folder structure from §3, base theme, empty home screen
