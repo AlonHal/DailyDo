@@ -1,70 +1,81 @@
-# Copy to a component repo root as .pre-commit-config.yaml, then:
+# Copy to a component repo root as .pre-commit-config.yaml (along with
+# templates/Makefile -> Makefile and templates/scripts/ -> scripts/),
+# then:
 #   pre-commit install
 #   pre-commit install --hook-type pre-push
-# See dev-standards/DEVELOPMENT_ENVIRONMENT_STANDARDS.md §4, §8, §9, §10 Phase 1
+#   pre-commit install --hook-type commit-msg
+# See dev-standards/DEVELOPMENT_ENVIRONMENT_STANDARDS.md §3, §4, §8, §9, §10 Phase 1
 #
 # pre-commit and gitleaks are installed in an isolated venv
-# (~/.venvs/dev-tools), not system-wide — see §9. gitleaks is a plain
-# `local` hook below (not the upstream golang-based repo hook) because
-# that variant needs a Go toolchain to build, which this VM doesn't have;
-# this instead calls the prebuilt gitleaks binary already on PATH.
+# (~/.venvs/dev-tools), not system-wide — see §9.
 #
-# Base hooks below apply to every repo. Uncomment the language-specific
-# block that matches this component (Flutter vs backend) once its
-# language is decided.
+# `make check`/`make test`/`make build` (see Makefile) are the single
+# source of truth for the actual checks — this file just decides *when*
+# each runs. Don't duplicate check logic here; add it to the Makefile.
+#
+# Every hook below has an explicit `stages:` — a hook without one runs
+# on every installed hook type (pre-commit, pre-push, commit-msg alike),
+# which silently duplicates work and can misfire (e.g. a commit-msg-only
+# check running with no commit-msg file to read).
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
+        stages: [pre-commit]
       - id: end-of-file-fixer
+        stages: [pre-commit]
       - id: check-merge-conflict
+        stages: [pre-commit]
       - id: check-added-large-files
         args: ["--maxkb=1000"]
+        stages: [pre-commit]
       - id: mixed-line-ending
+        stages: [pre-commit]
+      - id: no-commit-to-branch
+        args: ["--branch", "main"]
+        stages: [pre-commit]
 
   - repo: local
     hooks:
-      - id: gitleaks
-        name: gitleaks secret scan
-        # Absolute path, not just `gitleaks` on PATH: git hooks don't
-        # reliably inherit ~/.zshrc's PATH (e.g. GUI git clients), and
-        # pre-commit's own hook script hardcodes its interpreter path
-        # for the same reason — this matches that pattern.
-        entry: /home/kali/.venvs/dev-tools/bin/gitleaks protect --staged --redact --verbose
+      - id: branch-name-check
+        name: branch naming convention (§3)
+        entry: scripts/check-branch-name.sh
         language: system
         pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
 
-  # --- Flutter/Dart repos: uncomment ---
-  # - repo: local
-  #   hooks:
-  #     - id: dart-format
-  #       name: dart format
-  #       entry: dart format --output=none --set-exit-if-changed
-  #       language: system
-  #       types: [dart]
-  #     - id: flutter-analyze
-  #       name: flutter analyze
-  #       entry: flutter analyze
-  #       language: system
-  #       pass_filenames: false
+      - id: conventional-commit-msg
+        name: conventional commit message format (§3)
+        entry: scripts/check-commit-msg.sh
+        language: system
+        # pass_filenames intentionally NOT set to false — commit-msg
+        # stage hooks need pre-commit to pass the commit-msg file path
+        # as $1.
+        stages: [commit-msg]
 
-  # --- Backend repos (Node): uncomment ---
-  # - repo: local
-  #   hooks:
-  #     - id: eslint
-  #       name: eslint
-  #       entry: npx eslint --fix
-  #       language: system
-  #       types: [javascript, ts]
+      - id: make-check
+        name: make check (format, lint, secret scan)
+        entry: make check
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
 
-  # --- Backend repos (Python): uncomment ---
-  # - repo: https://github.com/psf/black
-  #   rev: 24.10.0
-  #   hooks:
-  #     - id: black
-  # - repo: https://github.com/astral-sh/ruff-pre-commit
-  #   rev: v0.8.4
-  #   hooks:
-  #     - id: ruff
+      - id: make-test
+        name: make test
+        entry: make test
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+
+      - id: make-build
+        name: make build (compile check)
+        entry: make build
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
