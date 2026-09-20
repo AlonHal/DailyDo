@@ -17,7 +17,7 @@ GITLEAKS := $(shell command -v gitleaks 2>/dev/null || echo $(HOME)/.venvs/dev-t
 
 check:
 	@echo "== gitleaks secret scan =="
-	@$(GITLEAKS) protect --staged --redact --verbose
+	@$(GITLEAKS) detect --no-git -v
 	@if command -v dart >/dev/null 2>&1; then \
 		echo "== dart format =="; \
 		dart format --output=none --set-exit-if-changed . ; \
@@ -44,11 +44,11 @@ build:
 all: check test build
 
 # --- Backend repos (Node): swap `check`/`test`/`build` above for, e.g. ---
-# check: ; @$(GITLEAKS) protect --staged --redact --verbose && npx eslint .
+# check: ; @$(GITLEAKS) detect --no-git -v && npx eslint .
 # test:  ; @npm test
 # build: ; @npm run build
 
 # --- Backend repos (Python): swap for, e.g. ---
-# check: ; @$(GITLEAKS) protect --staged --redact --verbose && ruff check . && black --check .
+# check: ; @$(GITLEAKS) detect --no-git -v && ruff check . && black --check .
 # test:  ; @pytest
 # build: ; @true  # no build step, or a packaging command
