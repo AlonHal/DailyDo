@@ -1,0 +1,70 @@
+# Copy to a component repo root as .pre-commit-config.yaml, then:
+#   pre-commit install
+#   pre-commit install --hook-type pre-push
+# See dev-standards/DEVELOPMENT_ENVIRONMENT_STANDARDS.md §4, §8, §9, §10 Phase 1
+#
+# pre-commit and gitleaks are installed in an isolated venv
+# (~/.venvs/dev-tools), not system-wide — see §9. gitleaks is a plain
+# `local` hook below (not the upstream golang-based repo hook) because
+# that variant needs a Go toolchain to build, which this VM doesn't have;
+# this instead calls the prebuilt gitleaks binary already on PATH.
+#
+# Base hooks below apply to every repo. Uncomment the language-specific
+# block that matches this component (Flutter vs backend) once its
+# language is decided.
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=1000"]
+      - id: mixed-line-ending
+
+  - repo: local
+    hooks:
+      - id: gitleaks
+        name: gitleaks secret scan
+        # Absolute path, not just `gitleaks` on PATH: git hooks don't
+        # reliably inherit ~/.zshrc's PATH (e.g. GUI git clients), and
+        # pre-commit's own hook script hardcodes its interpreter path
+        # for the same reason — this matches that pattern.
+        entry: /home/kali/.venvs/dev-tools/bin/gitleaks protect --staged --redact --verbose
+        language: system
+        pass_filenames: false
+
+  # --- Flutter/Dart repos: uncomment ---
+  # - repo: local
+  #   hooks:
+  #     - id: dart-format
+  #       name: dart format
+  #       entry: dart format --output=none --set-exit-if-changed
+  #       language: system
+  #       types: [dart]
+  #     - id: flutter-analyze
+  #       name: flutter analyze
+  #       entry: flutter analyze
+  #       language: system
+  #       pass_filenames: false
+
+  # --- Backend repos (Node): uncomment ---
+  # - repo: local
+  #   hooks:
+  #     - id: eslint
+  #       name: eslint
+  #       entry: npx eslint --fix
+  #       language: system
+  #       types: [javascript, ts]
+
+  # --- Backend repos (Python): uncomment ---
+  # - repo: https://github.com/psf/black
+  #   rev: 24.10.0
+  #   hooks:
+  #     - id: black
+  # - repo: https://github.com/astral-sh/ruff-pre-commit
+  #   rev: v0.8.4
+  #   hooks:
+  #     - id: ruff
